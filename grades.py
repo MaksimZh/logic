@@ -1,9 +1,22 @@
 from status import *
 
+
 class GradeCalculator(Status):
 
-    def calculateAverage(self, numbers: list[int]) -> int:
-        ...
+    @status("OK", "EMPTY", "INVALID")
+    def calculateAverage(self, grades: list[int]) -> int:
+        if not grades:
+            self._set_status("calculateAverage", "EMPTY")
+            return 0
+        if not all(n >= 2 and n <= 5 for n in grades):
+            self._set_status("calculateAverage", "INVALID")
+            return 0
+        self._set_status("calculateAverage", "OK")
+        total = sum(grades)
+        count = len(grades)
+        if 2 * (total % count) >= count:
+            return total // count + 1
+        return total // count
 
 
 import unittest
@@ -39,7 +52,6 @@ class Test_BankAccount(unittest.TestCase):
         self.assertEqual(gc.get_status("calculateAverage"), "INVALID")
         self.assertAlmostEqual(gc.calculateAverage([2, 6, 3]), 0)
         self.assertEqual(gc.get_status("calculateAverage"), "INVALID")
-
 
 
 if __name__ == '__main__':
