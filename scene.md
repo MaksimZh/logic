@@ -72,3 +72,83 @@ let rec scene (view: MatrixW, clipping: Rect) (widget: Widget)
 Параметр **что** - полностью ортогональная логика,
 его обработка даже вынесена в отдельный `match`,
 который вычисляет значение `self`.
+
+Нужно разделить всё на 3 разных сущности, или больше:
+
+```F#
+// Что ----------------------------------------------------
+
+type Sprite =
+    {
+        Location: Rect
+        Texture: Rect
+        Palette: float32
+    }
+    member this.Triangles = [(*TODO*)]
+
+
+let display (data: obj) (size: Vector) : Sprite list =
+    match data with
+    | :? ImageData as data ->
+        [(*TODO*)]
+    | :? TextData as data -> 
+        [(*TODO*)]
+    | _ -> []
+
+
+// Где ----------------------------------------------------
+
+type SpriteView (view: MatrixW, clipping: Rect) =
+    
+    member this.Inner (widget: Widget) : SpriteView option =
+        let clip = clipping.Intersect (widget.Location.Transform view)
+        match clip with
+        | None -> None
+        | Some newClipping ->
+            let translatedView =
+                view * (MatrixW.translation widget.Location.LeftBottom)
+            let new_view =
+                match widget.Data with
+                | :? LensData as lens ->
+                    let (Lens v) = lens
+                    translatedView * v
+                | _ -> translatedView
+            Some (SpriteView (new_view, newClipping))
+
+    
+    member this.Place (source: Sprite list) : Sprite list =
+        [(*TODO*)]
+
+
+// Когда --------------------------------------------------
+
+let rec scene (view: SpriteView) (widget: Widget)
+        : Sprite list =
+    match view.Inner widget with
+    | None -> []
+    | Some innerView ->
+        let self = display widget.Data widget.Location.Size |> innerView.Place
+        match widget.Content with
+        | None -> self
+        | Some container ->
+            List.append self (
+                container.Children |>
+                Seq.map (scene innerView) |>
+                List.concat)
+```
+
+Теперь мы возвращаем спрайты, а не полигоны,
+которые появятся на более низком уровне абстракции.
+
+Логика функции `scene` стала прозрачной:
+если виджет видно, то показать его самого
+и "детей" (во внутренних координатах).
+
+Все вычисления координат ушли в `SpriteView`.
+Изменения в логике отображения возникнут здесь, но не затронут `scene`.
+Даже если `clipping` перестанет быть прямоугольником -
+`scene` этими подробностями не занимается.
+
+Сами спрайты выбираются функцией `display`,
+которая получает только размеры области.
+Ей не нужно знать где виджет находится и как масштабируется.
