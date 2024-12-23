@@ -13,7 +13,10 @@ def findMax(arr: list[int]) -> int:
             # {arr[i] = max(arr[0 : i + 1])}
             m = arr[i]
             # {m = max(arr[0 : i + 1])}
-            # инвариант выполняется, т.к. по условию цикла:
-            #     1 <= i < len(arr)
+        # {(m = max(arr[0 : i + 1])) or (arr[i] <= m and m = max(arr[0:i]))}
+        # равносильно
+        # {m = max(arr[0 : i + 1])}
+        # инвариант выполняется, т.к. по условию цикла:
+        #     1 <= i < len(arr)
     return m
 # {return = max(arr)}
